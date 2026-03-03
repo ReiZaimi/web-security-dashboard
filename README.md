@@ -1,7 +1,7 @@
 # 🔐 NovaPay Security Controls Dashboard
 ### CompTIA Security+ Project — Domain 1: General Security Concepts
 
-> **Note:** NovaPay Inc. is a fictional AI-generated company created for educational purposes. All data, controls, and scenarios are simulated to reflect a realistic fintech security environment.
+> **Note:** NovaPay Inc. is a fictional company created for educational purposes. All data, controls, and scenarios are simulated to reflect a realistic fintech security environment.
 
 ---
 
@@ -11,7 +11,7 @@ This project is a hands-on application of **CompTIA Security+ Domain 1 — Gener
 
 The deliverable is a fully interactive **HTML Security Controls Dashboard** mapping 34 security controls across four categories for NovaPay Inc. — a fictional 50-person fintech startup processing digital payments.
 
-**Live Dashboard →** `https://yourusername.github.io/novapay-security-dashboard/novapay_security_dashboard_v3.html`
+**Live Dashboard →** `https://reizaimi.github.io/web-security-dashboard/`
 
 ---
 
@@ -19,7 +19,7 @@ The deliverable is a fully interactive **HTML Security Controls Dashboard** mapp
 
 | Field | Details |
 |---|---|
-| **Company** | NovaPay Inc. *(fictional, AI-generated)* |
+| **Company** | NovaPay Inc. *(fictional)* |
 | **Industry** | Fintech — Digital Payments & Money Transfers |
 | **Size** | 50 employees |
 | **Founded** | 2021 (fictional) |
