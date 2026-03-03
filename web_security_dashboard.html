@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovaPay Inc. — Security Controls Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--border:#e2e0da;
+  --text-primary:#1a1a18;--text-secondary:#6b6960;--text-muted:#9e9b91;
+  --accent:#1d3557;--accent-light:#e8edf3;
+  --green:#2d6a4f;--green-bg:#eaf4ef;
+  --amber:#b5620a;--amber-bg:#fdf3e7;
+  --red:#c0392b;--red-bg:#fdecea;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* HEADER */
+.header{background:var(--accent);padding:28px 48px 24px;position:relative;overflow:hidden}
+.header::after{content:'';position:absolute;right:-60px;top:-60px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.04)}
+.header::before{content:'';position:absolute;right:80px;bottom:-80px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.03)}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo-mark{width:42px;height:42px;background:rgba(255,255,255,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:20px;color:#fff;border:1px solid rgba(255,255,255,.2);flex-shrink:0}
+.company-name{font-family:'DM Serif Display',serif;font-size:26px;color:#fff;letter-spacing:-.3px}
+.company-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;font-family:'DM Mono',monospace;letter-spacing:.5px}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.header-badge{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);background:rgba(255,255,255,.1);padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.15)}
+.header-meta{font-size:11px;color:rgba(255,255,255,.4);font-family:'DM Mono',monospace;text-align:right}
+.header-title{font-size:12px;color:rgba(255,255,255,.45);letter-spacing:.8px;text-transform:uppercase;font-family:'DM Mono',monospace;margin-top:4px}
+
+/* STATS BAR */
+.stats-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 48px;display:flex}
+.stat-item{padding:16px 32px 16px 0;margin-right:32px;border-right:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.stat-item:last-child{border-right:none}
+.stat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.stat-dot.total{background:var(--accent)}.stat-dot.implemented{background:var(--green)}
+.stat-dot.partial{background:var(--amber)}.stat-dot.missing{background:var(--red)}
+.stat-number{font-family:'DM Serif Display',serif;font-size:22px;line-height:1}
+.stat-label{font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;font-family:'DM Mono',monospace}
+
+/* TABS */
+.tabs-wrapper{background:var(--surface);border-bottom:1px solid var(--border);padding:0 48px;display:flex;gap:2px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow-x:auto}
+.tab-btn{padding:14px 18px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.tab-btn:hover{color:var(--text-primary)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tab-count{display:inline-block;background:var(--accent-light);color:var(--accent);font-size:10px;font-family:'DM Mono',monospace;padding:1px 6px;border-radius:10px;margin-left:6px}
+.tab-btn.active .tab-count{background:var(--accent);color:#fff}
+
+/* CONTENT */
+.content{padding:32px 48px;max-width:1200px}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.filter-label{font-size:11px;font-family:'DM Mono',monospace;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-right:4px}
+.filter-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:11.5px;cursor:pointer;transition:all .15s;color:var(--text-secondary);font-weight:500}
+.filter-btn:hover{border-color:var(--accent);color:var(--accent)}
+.filter-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.filter-btn.f-implemented.active{background:var(--green);border-color:var(--green)}
+.filter-btn.f-partial.active{background:var(--amber);border-color:var(--amber)}
+.filter-btn.f-missing.active{background:var(--red);border-color:var(--red)}
+.search-input{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text-primary);outline:none;width:180px;margin-left:auto;transition:border .15s}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--text-muted)}
+
+/* PANEL HEADER */
+.panel-header{margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.panel-title{font-family:'DM Serif Display',serif;font-size:20px}
+.panel-desc{font-size:12.5px;color:var(--text-secondary);margin-top:3px;max-width:500px}
+.panel-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.panel-stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.mini-stat{font-size:11px;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:4px;font-weight:500}
+.mini-stat.g{background:var(--green-bg);color:var(--green)}
+.mini-stat.a{background:var(--amber-bg);color:var(--amber)}
+.mini-stat.r{background:var(--red-bg);color:var(--red)}
+
+/* PROGRESS RING */
+.progress-ring-wrap{display:flex;align-items:center;gap:8px}
+.progress-ring-label{font-size:11px;font-family:'DM Mono',monospace;color:var(--text-muted)}
+.progress-ring{transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:#f0efe9;stroke-width:4}
+.ring-fill{fill:none;stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)}
+
+/* TABLE */
+.controls-table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+.controls-table thead tr{background:#f8f7f4;border-bottom:1px solid var(--border)}
+.controls-table th{padding:11px 14px;text-align:left;font-size:10.5px;font-family:'DM Mono',monospace;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.7px}
+.controls-table td{padding:12px 14px;border-bottom:1px solid #f0efe9;vertical-align:middle}
+.controls-table tr:last-child td{border-bottom:none}
+.controls-table tbody tr{transition:background .15s;cursor:pointer}
+.controls-table tbody tr:hover{background:#fafaf8}
+.controls-table tbody tr.hidden-row{display:none}
+.control-name{font-size:13px;font-weight:500}
+.expand-icon{font-size:10px;color:var(--text-muted);margin-left:6px;transition:transform .2s;display:inline-block}
+.expanded .expand-icon{transform:rotate(90deg)}
+
+/* RISK METER */
+.risk-meter{display:flex;align-items:center;gap:6px}
+.risk-bar-track{width:52px;height:6px;background:#f0efe9;border-radius:3px;overflow:hidden}
+.risk-bar-fill{height:100%;border-radius:3px}
+.risk-score{font-size:10px;font-family:'DM Mono',monospace;color:var(--text-muted);width:18px}
+
+/* COMPLIANCE TAGS */
+.comp-tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-family:'DM Mono',monospace;font-weight:500;margin-right:3px;margin-bottom:2px}
+.comp-pci{background:#e8edf3;color:#1d3557}
+.comp-soc{background:#f0f7f4;color:#2d6a4f}
+.comp-both{background:#f5f0fa;color:#6b3fa0}
+
+/* EXPAND ROW */
+.expand-row{display:none}
+.expand-row.open{display:table-row}
+.expand-row td{background:#f8f8f5;padding:0;border-bottom:1px solid var(--border)}
+.expand-content{padding:16px 20px 16px 48px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.expand-section-title{font-size:10px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:4px}
+.expand-section-text{font-size:12.5px;color:var(--text-secondary);line-height:1.6}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;font-family:'DM Mono',monospace;white-space:nowrap}
+.badge-type{background:var(--accent-light);color:var(--accent)}
+.badge-implemented{background:var(--green-bg);color:var(--green)}
+.badge-partial{background:var(--amber-bg);color:var(--amber)}
+.badge-missing{background:var(--red-bg);color:var(--red)}
+.badge-high{background:var(--red-bg);color:var(--red)}
+.badge-medium{background:var(--amber-bg);color:var(--amber)}
+.badge-low{background:var(--green-bg);color:var(--green)}
+.no-results{text-align:center;padding:40px;color:var(--text-muted);font-size:13px;font-style:italic}
+
+/* GAP ANALYSIS */
+.gap-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
+.gap-card{background:var(--surface);border-radius:10px;padding:24px;box-shadow:var(--shadow)}
+.gap-card.full{grid-column:1/-1}
+.gap-card-title{font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--text-muted);margin-bottom:16px}
+.weakness-alert{background:var(--red-bg);border:1px solid #f5c6c2;border-radius:8px;padding:14px 18px;margin-top:20px;display:flex;gap:12px;align-items:flex-start}
+.weakness-alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.weakness-alert-title{font-weight:600;font-size:13px;color:var(--red);margin-bottom:3px}
+.weakness-alert-text{font-size:12.5px;color:#7a2020;line-height:1.5}
+.recommendation-list{list-style:none}
+.recommendation-list li{padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-secondary);display:flex;gap:10px;align-items:flex-start}
+.recommendation-list li:last-child{border-bottom:none}
+.rec-num{font-family:'DM Mono',monospace;font-size:10px;background:var(--accent-light);color:var(--accent);padding:2px 6px;border-radius:4px;flex-shrink:0;margin-top:1px}
+.donut-wrapper{display:flex;align-items:center;justify-content:center;gap:24px}
+.donut-legend{display:flex;flex-direction:column;gap:10px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* COMPANY PROFILE */
+.profile-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+.profile-card{background:var(--surface);border-radius:10px;padding:28px;box-shadow:var(--shadow)}
+.profile-card.full{grid-column:1/-1}
+.profile-hero{display:flex;align-items:center;gap:18px;margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.profile-logo{width:56px;height:56px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:26px;color:#fff;flex-shrink:0}
+.profile-company{font-family:'DM Serif Display',serif;font-size:24px}
+.profile-tagline{font-size:13px;color:var(--text-secondary);margin-top:4px}
+.profile-founded{font-size:11px;font-family:'DM Mono',monospace;color:var(--text-muted);margin-top:4px}
+.profile-section-title{font-size:11px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.7px;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--accent-light)}
+.profile-text{font-size:13px;color:var(--text-secondary);line-height:1.75;margin-bottom:16px}
+.profile-text:last-child{margin-bottom:0}
+.fact-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.fact-item{background:var(--bg);border-radius:8px;padding:12px 14px}
+.fact-label{font-size:10px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:3px}
+.fact-value{font-size:13px;font-weight:500;color:var(--text-primary)}
+.team-list{list-style:none}
+.team-list li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.team-list li:last-child{border-bottom:none}
+.team-role{color:var(--text-muted);font-size:11.5px}
+.stack-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.stack-tag{background:var(--accent-light);color:var(--accent);font-size:11px;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:4px}
+.threat-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.threat-item:last-child{border-bottom:none}
+.threat-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.threat-title{font-size:13px;font-weight:500;margin-bottom:2px}
+.threat-desc{font-size:12px;color:var(--text-secondary);line-height:1.5}
+.compliance-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-right:8px;margin-bottom:8px}
+.compliance-badge.pci{background:#e8edf3;color:#1d3557;border:1px solid #c5d3e0}
+.compliance-badge.soc{background:#eaf4ef;color:#2d6a4f;border:1px solid #b7dfc9}
+
+/* EXECUTIVE SUMMARY */
+.exec-summary{background:var(--surface);border-radius:10px;padding:40px;box-shadow:var(--shadow);max-width:820px}
+.exec-header{border-bottom:2px solid var(--accent);padding-bottom:20px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-start}
+.exec-title{font-family:'DM Serif Display',serif;font-size:22px}
+.exec-subtitle{font-size:12px;color:var(--text-muted);margin-top:4px;font-family:'DM Mono',monospace}
+.exec-meta{text-align:right;font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;line-height:1.8}
+.exec-section{margin-bottom:24px}
+.exec-section-title{font-size:11px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.8px;color:var(--accent);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--accent-light)}
+.exec-section p{font-size:13.5px;color:var(--text-secondary);line-height:1.75;margin-bottom:10px}
+.exec-section p:last-child{margin-bottom:0}
+.exec-highlight{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0}
+.exec-highlight-item{background:var(--bg);border-radius:8px;padding:14px 16px;text-align:center}
+.exec-highlight-num{font-family:'DM Serif Display',serif;font-size:28px;color:var(--accent)}
+.exec-highlight-label{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.exec-signature{margin-top:32px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-end}
+.exec-sig-name{font-weight:600;font-size:13px}
+.exec-sig-role{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;margin-top:2px}
+.exec-sig-date{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace}
+.priority-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10.5px;font-family:'DM Mono',monospace;font-weight:600;margin-right:6px}
+.priority-tag.critical{background:var(--red-bg);color:var(--red)}
+.priority-tag.high{background:var(--amber-bg);color:var(--amber)}
+.print-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .2s;margin-top:20px}
+.print-btn:hover{opacity:.85}
+
+.footer{padding:20px 48px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;display:flex;justify-content:space-between}
+@keyframes fadeRow{to{opacity:1}}
+@media print{.tabs-wrapper,.filter-bar,.print-btn,.footer{display:none!important}.exec-summary{box-shadow:none;padding:0}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="header-left">
+      <div class="logo-mark">N</div>
+      <div>
+        <div class="company-name">NovaPay Inc.</div>
+        <div class="company-sub">DIGITAL PAYMENTS & MONEY TRANSFERS · 50 EMPLOYEES</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-badge">PCI-DSS · SOC 2</div>
+      <div class="header-meta">Analyst: Rei Zaimi · Updated: March 3, 2026</div>
+    </div>
+  </div>
+  <div class="header-title">Security Controls Dashboard — Domain 1: General Security Concepts</div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-item"><div class="stat-dot total"></div><div><div class="stat-number" id="stat-total">—</div><div class="stat-label">Total Controls</div></div></div>
+  <div class="stat-item"><div class="stat-dot implemented"></div><div><div class="stat-number" id="stat-implemented">—</div><div class="stat-label">Implemented</div></div></div>
+  <div class="stat-item"><div class="stat-dot partial"></div><div><div class="stat-number" id="stat-partial">—</div><div class="stat-label">Partial</div></div></div>
+  <div class="stat-item"><div class="stat-dot missing"></div><div><div class="stat-number" id="stat-missing">—</div><div class="stat-label">Missing</div></div></div>
+</div>
+
+<div class="tabs-wrapper">
+  <button class="tab-btn active" onclick="switchTab('profile',this)">Company Profile <span class="tab-count">★</span></button>
+  <button class="tab-btn" onclick="switchTab('technical',this)">Technical <span class="tab-count" id="tc-technical"></span></button>
+  <button class="tab-btn" onclick="switchTab('managerial',this)">Managerial <span class="tab-count" id="tc-managerial"></span></button>
+  <button class="tab-btn" onclick="switchTab('operational',this)">Operational <span class="tab-count" id="tc-operational"></span></button>
+  <button class="tab-btn" onclick="switchTab('physical',this)">Physical <span class="tab-count" id="tc-physical"></span></button>
+  <button class="tab-btn" onclick="switchTab('gap',this)">Gap Analysis <span class="tab-count">!</span></button>
+  <button class="tab-btn" onclick="switchTab('exec',this)">Executive Summary <span class="tab-count">↗</span></button>
+</div>
+
+<div class="content">
+
+  <!-- COMPANY PROFILE -->
+  <div id="tab-profile" class="tab-panel active">
+    <div class="profile-grid">
+      <div class="profile-card">
+        <div class="profile-hero">
+          <div class="profile-logo">N</div>
+          <div>
+            <div class="profile-company">NovaPay Inc.</div>
+            <div class="profile-tagline">Move money faster. Keep it safer.</div>
+            <div class="profile-founded">Founded 2021 · Headquarters: Austin, TX · Series A Funded</div>
+          </div>
+        </div>
+        <div class="profile-section-title" style="margin-bottom:10px">Company Story</div>
+        <div class="profile-text">NovaPay was founded in 2021 by three fintech veterans who saw a gap in the market for a developer-first digital payments platform built for small and mid-size businesses. Frustrated by the complexity and cost of legacy payment processors, they set out to build a modern, API-native alternative that could handle domestic and cross-border money transfers at a fraction of the typical cost.</div>
+        <div class="profile-text">After closing a $4.2M seed round in 2022, NovaPay launched its core payments API and quickly onboarded 120+ business customers across e-commerce, SaaS, and logistics. In late 2024, the company raised a $18M Series A to expand its engineering team, pursue PCI-DSS Level 1 certification, and begin SOC 2 Type II audit preparation.</div>
+        <div class="profile-text">Today, NovaPay processes over $2.3M in daily transaction volume across 14 countries, with a 50-person team split between engineering, product, operations, and go-to-market. The company operates entirely on AWS (us-east-1 primary, eu-west-1 failover) and maintains a remote-first culture with a small Austin office for leadership and operations staff.</div>
+
+        <div class="profile-section-title" style="margin-top:20px">Compliance Obligations</div>
+        <div>
+          <span class="compliance-badge pci">🔒 PCI-DSS Level 1</span>
+          <span class="compliance-badge soc">✓ SOC 2 Type II (in progress)</span>
+        </div>
+        <div class="profile-text" style="margin-top:10px">As a payment processor handling cardholder data, NovaPay is subject to PCI-DSS Level 1 — the most stringent tier, requiring an annual on-site assessment by a Qualified Security Assessor (QSA). The company is also completing its first SOC 2 Type II audit to satisfy enterprise customer requirements around security, availability, and confidentiality.</div>
+
+        <div class="profile-section-title" style="margin-top:20px">Threat Landscape</div>
+        <div class="threat-item">
+          <div class="threat-icon">💳</div>
+          <div><div class="threat-title">Payment Fraud & Account Takeover</div><div class="threat-desc">NovaPay's transaction APIs are a prime target for fraudsters using stolen credentials or synthetic identities. Account takeover via credential stuffing poses direct financial risk to customers and reputational damage to NovaPay.</div></div>
+        </div>
+        <div class="threat-item">
+          <div class="threat-icon">🎣</div>
+          <div><div class="threat-title">Phishing & Social Engineering</div><div class="threat-desc">With a remote-first workforce of 50 employees, spear-phishing attacks targeting finance and engineering staff are a constant threat. A single compromised credential can expose access to the AWS production environment.</div></div>
+        </div>
+        <div class="threat-item">
+          <div class="threat-icon">🔓</div>
+          <div><div class="threat-title">API Abuse & Injection Attacks</div><div class="threat-desc">NovaPay's payment platform exposes dozens of REST API endpoints. Without comprehensive WAF and input validation, attackers may exploit injection vulnerabilities or abuse rate limits to enumerate accounts or manipulate transactions.</div></div>
+        </div>
+        <div class="threat-item">
+          <div class="threat-icon">🏢</div>
+          <div><div class="threat-title">Insider Threat</div><div class="threat-desc">Employees and contractors with access to payment data, customer PII, and AWS infrastructure represent an insider risk — whether malicious or accidental. Privileged access abuse is particularly dangerous given the financial data NovaPay holds.</div></div>
+        </div>
+        <div class="threat-item">
+          <div class="threat-icon">🔗</div>
+          <div><div class="threat-title">Third-Party & Supply Chain Risk</div><div class="threat-desc">NovaPay depends on multiple third-party vendors for banking rails, KYC verification, fraud scoring, and cloud infrastructure. A breach at any of these partners could directly compromise NovaPay's data or service availability.</div></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <div class="profile-card">
+          <div class="profile-section-title">Key Facts</div>
+          <div class="fact-grid">
+            <div class="fact-item"><div class="fact-label">Employees</div><div class="fact-value">50</div></div>
+            <div class="fact-item"><div class="fact-label">Founded</div><div class="fact-value">2021</div></div>
+            <div class="fact-item"><div class="fact-label">Daily Volume</div><div class="fact-value">$2.3M+</div></div>
+            <div class="fact-item"><div class="fact-label">Countries</div><div class="fact-value">14</div></div>
+            <div class="fact-item"><div class="fact-label">Cloud</div><div class="fact-value">AWS</div></div>
+            <div class="fact-item"><div class="fact-label">IT Team</div><div class="fact-value">2 FTEs</div></div>
+            <div class="fact-item"><div class="fact-label">Funding</div><div class="fact-value">Series A</div></div>
+            <div class="fact-item"><div class="fact-label">HQ</div><div class="fact-value">Austin, TX</div></div>
+          </div>
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-section-title">Team Structure</div>
+          <ul class="team-list">
+            <li><span>Engineering</span><span class="team-role">22 employees</span></li>
+            <li><span>Product & Design</span><span class="team-role">6 employees</span></li>
+            <li><span>Sales & Marketing</span><span class="team-role">10 employees</span></li>
+            <li><span>Finance & Legal</span><span class="team-role">4 employees</span></li>
+            <li><span>Operations</span><span class="team-role">6 employees</span></li>
+            <li><span>IT & Security</span><span class="team-role">2 employees</span></li>
+          </ul>
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-section-title">Technology Stack</div>
+          <div class="stack-tags">
+            <span class="stack-tag">AWS (us-east-1)</span>
+            <span class="stack-tag">Node.js</span>
+            <span class="stack-tag">PostgreSQL</span>
+            <span class="stack-tag">React</span>
+            <span class="stack-tag">Stripe Connect</span>
+            <span class="stack-tag">Plaid</span>
+            <span class="stack-tag">Okta (SSO)</span>
+            <span class="stack-tag">GitHub</span>
+            <span class="stack-tag">Datadog</span>
+            <span class="stack-tag">Terraform</span>
+            <span class="stack-tag">Docker</span>
+            <span class="stack-tag">Kubernetes</span>
+          </div>
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-section-title">Security Maturity</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px">Technical Controls</span><span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-muted)" id="mat-tech">—</span></div>
+              <div style="background:#f0efe9;border-radius:4px;height:6px;overflow:hidden"><div id="mat-tech-bar" style="height:100%;border-radius:4px;background:var(--accent);width:0%;transition:width 1s"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px">Managerial Controls</span><span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-muted)" id="mat-mgr">—</span></div>
+              <div style="background:#f0efe9;border-radius:4px;height:6px;overflow:hidden"><div id="mat-mgr-bar" style="height:100%;border-radius:4px;background:var(--accent);width:0%;transition:width 1s .1s"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px">Operational Controls</span><span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-muted)" id="mat-ops">—</span></div>
+              <div style="background:#f0efe9;border-radius:4px;height:6px;overflow:hidden"><div id="mat-ops-bar" style="height:100%;border-radius:4px;background:var(--accent);width:0%;transition:width 1s .2s"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px">Physical Controls</span><span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-muted)" id="mat-phy">—</span></div>
+              <div style="background:#f0efe9;border-radius:4px;height:6px;overflow:hidden"><div id="mat-phy-bar" style="height:100%;border-radius:4px;background:var(--accent);width:0%;transition:width 1s .3s"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROL TABS -->
+  <div id="tab-technical" class="tab-panel">
+    <div class="panel-header">
+      <div><div class="panel-title">Technical Controls</div><div class="panel-desc">Technology-based controls enforced through systems, software, and NovaPay's AWS-hosted infrastructure.</div></div>
+      <div class="panel-right">
+        <div id="ring-technical"></div>
+        <div class="panel-stats"><span class="mini-stat g" id="ps-technical-i"></span><span class="mini-stat a" id="ps-technical-p"></span><span class="mini-stat r" id="ps-technical-m"></span></div>
+      </div>
+    </div>
+    <div class="filter-bar" id="fb-technical"></div>
+    <table class="controls-table" id="tbl-technical"><thead><tr><th style="width:32%">Control</th><th>Type</th><th>Status</th><th>Risk Score</th><th>Compliance</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div id="tab-managerial" class="tab-panel">
+    <div class="panel-header">
+      <div><div class="panel-title">Managerial Controls</div><div class="panel-desc">Governance, policy, and risk management controls guiding NovaPay's security strategy and compliance posture.</div></div>
+      <div class="panel-right">
+        <div id="ring-managerial"></div>
+        <div class="panel-stats"><span class="mini-stat g" id="ps-managerial-i"></span><span class="mini-stat a" id="ps-managerial-p"></span><span class="mini-stat r" id="ps-managerial-m"></span></div>
+      </div>
+    </div>
+    <div class="filter-bar" id="fb-managerial"></div>
+    <table class="controls-table" id="tbl-managerial"><thead><tr><th style="width:32%">Control</th><th>Type</th><th>Status</th><th>Risk Score</th><th>Compliance</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div id="tab-operational" class="tab-panel">
+    <div class="panel-header">
+      <div><div class="panel-title">Operational Controls</div><div class="panel-desc">Day-to-day human-driven processes and procedures that NovaPay staff execute to maintain security posture.</div></div>
+      <div class="panel-right">
+        <div id="ring-operational"></div>
+        <div class="panel-stats"><span class="mini-stat g" id="ps-operational-i"></span><span class="mini-stat a" id="ps-operational-p"></span><span class="mini-stat r" id="ps-operational-m"></span></div>
+      </div>
+    </div>
+    <div class="filter-bar" id="fb-operational"></div>
+    <table class="controls-table" id="tbl-operational"><thead><tr><th style="width:32%">Control</th><th>Type</th><th>Status</th><th>Risk Score</th><th>Compliance</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div id="tab-physical" class="tab-panel">
+    <div class="panel-header">
+      <div><div class="panel-title">Physical Controls</div><div class="panel-desc">Physical barriers and access controls protecting NovaPay's office environment and hardware assets.</div></div>
+      <div class="panel-right">
+        <div id="ring-physical"></div>
+        <div class="panel-stats"><span class="mini-stat g" id="ps-physical-i"></span><span class="mini-stat a" id="ps-physical-p"></span><span class="mini-stat r" id="ps-physical-m"></span></div>
+      </div>
+    </div>
+    <div class="filter-bar" id="fb-physical"></div>
+    <table class="controls-table" id="tbl-physical"><thead><tr><th style="width:32%">Control</th><th>Type</th><th>Status</th><th>Risk Score</th><th>Compliance</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <!-- GAP ANALYSIS -->
+  <div id="tab-gap" class="tab-panel">
+    <div class="panel-header"><div><div class="panel-title">Gap Analysis</div><div class="panel-desc">Control type coverage across all categories — identifying where NovaPay's security posture is weakest.</div></div></div>
+    <div class="gap-grid">
+      <div class="gap-card">
+        <div class="gap-card-title">Control Type Distribution</div>
+        <div class="donut-wrapper">
+          <div style="width:200px;height:200px"><canvas id="donutChart"></canvas></div>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+        <div class="weakness-alert">
+          <div class="weakness-alert-icon">⚠️</div>
+          <div>
+            <div class="weakness-alert-title">Primary Gap: Compensating & Deterrent Controls</div>
+            <div class="weakness-alert-text">Only 1–2 controls each. For a fintech handling live payments, missing compensating controls means no fallback when primary controls fail — a direct PCI-DSS risk.</div>
+          </div>
+        </div>
+      </div>
+      <div class="gap-card">
+        <div class="gap-card-title">Status by Category</div>
+        <canvas id="statusChart" height="240"></canvas>
+      </div>
+      <div class="gap-card full">
+        <div class="gap-card-title">Recommended Priority Actions</div>
+        <ul class="recommendation-list">
+          <li><span class="rec-num">01</span><span><strong>Complete Manual Transaction Review process</strong> — the only Compensating control is Missing. A human fallback for edge-case fraud flags is required under PCI-DSS Requirement 10.</span></li>
+          <li><span class="rec-num">02</span><span><strong>Conduct first IR Tabletop Exercise</strong> — NovaPay has a documented IR Plan but has never rehearsed it. Organizations that haven't practiced their plan take significantly longer to contain breaches.</span></li>
+          <li><span class="rec-num">03</span><span><strong>Deploy Privileged Access Management (PAM)</strong> — admin accounts with unchecked access to AWS production are a critical insider threat vector. PAM adds approval workflows and session recording for privileged operations.</span></li>
+          <li><span class="rec-num">04</span><span><strong>Finalize EDR rollout</strong> — partial deployment leaves unmonitored endpoints. A single unprotected device is a potential entry point into NovaPay's AWS environment.</span></li>
+          <li><span class="rec-num">05</span><span><strong>Implement Secure Device Disposal process</strong> — decommissioned laptops with unwiped drives containing payment data is a direct PCI-DSS violation risk.</span></li>
+          <li><span class="rec-num">06</span><span><strong>Add Deterrent layer</strong> — login warning banners, visible CCTV signage, and a visitor escort policy deter both insider threats and physical intruders at minimal cost.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXECUTIVE SUMMARY -->
+  <div id="tab-exec" class="tab-panel">
+    <div class="exec-summary" id="exec-printable">
+      <div class="exec-header">
+        <div>
+          <div class="exec-title">Executive Security Controls Summary</div>
+          <div class="exec-subtitle">NovaPay Inc. · Domain 1: General Security Concepts · Prepared for CISO Review</div>
+        </div>
+        <div class="exec-meta">Prepared by: Rei Zaimi<br>Date: March 3, 2026<br>Classification: Internal</div>
+      </div>
+      <div class="exec-section">
+        <div class="exec-section-title">Overview</div>
+        <p>This report presents a comprehensive mapping of NovaPay Inc.'s security controls across four categories — Technical, Managerial, Operational, and Physical — against the CompTIA Security+ framework. A total of <span id="exec-total">—</span> controls were evaluated for a 50-person digital payments company operating on AWS and subject to PCI-DSS Level 1 and SOC 2 Type II compliance requirements.</p>
+        <div class="exec-highlight">
+          <div class="exec-highlight-item"><div class="exec-highlight-num" id="exec-total-n">—</div><div class="exec-highlight-label">Controls Mapped</div></div>
+          <div class="exec-highlight-item"><div class="exec-highlight-num" id="exec-implemented" style="color:var(--green)">—</div><div class="exec-highlight-label">Implemented</div></div>
+          <div class="exec-highlight-item"><div class="exec-highlight-num" id="exec-missing" style="color:var(--red)">—</div><div class="exec-highlight-label">Missing</div></div>
+        </div>
+      </div>
+      <div class="exec-section">
+        <div class="exec-section-title">Current Posture</div>
+        <p>NovaPay has established a solid foundation in core Preventive and Directive controls. Multi-Factor Authentication, encryption at rest via AWS KMS, a formal Information Security Policy, and a documented Incident Response Plan are all fully implemented. UEBA and Fraud/Transaction Monitoring are also operational, reflecting appropriate investment in the company's highest-value risk area — payment integrity.</p>
+        <p>However, significant gaps remain in the company's ability to detect threats in real time and respond operationally. Detective controls are underrepresented relative to the threat landscape, and two high-priority Operational controls — Manual Transaction Review and Incident Response Tabletop Exercises — are entirely missing. The Physical category is thin, and no Privileged Access Management solution is in place for AWS admin accounts.</p>
+      </div>
+      <div class="exec-section">
+        <div class="exec-section-title">Critical Findings</div>
+        <p><span class="priority-tag critical">CRITICAL</span><strong>No Manual Transaction Review process exists.</strong> NovaPay's sole Compensating control is Missing. Given known false-negative rates in automated fraud detection, the absence of a human review fallback creates direct PCI-DSS Requirement 10 exposure.</p>
+        <p><span class="priority-tag critical">CRITICAL</span><strong>Incident Response Plan has never been exercised.</strong> A documented plan without rehearsal is insufficient. Industry data consistently shows organizations without practiced IR plans take significantly longer to contain breaches.</p>
+        <p><span class="priority-tag critical">CRITICAL</span><strong>No Privileged Access Management (PAM).</strong> AWS admin credentials without session recording, approval workflows, or just-in-time access represent an unchecked insider threat and a direct SOC 2 gap.</p>
+        <p><span class="priority-tag high">HIGH</span><strong>Partial coverage across EDR, SIEM, WAF, and RBAC.</strong> Four core Technical controls remain partially deployed, leaving visibility and access control gaps across the environment.</p>
+      </div>
+      <div class="exec-section">
+        <div class="exec-section-title">Recommendations</div>
+        <p>The following actions are recommended in order of urgency: (1) establish the Manual Transaction Review process within 30 days; (2) deploy a PAM solution for AWS admin accounts within 45 days; (3) schedule and conduct the first IR Tabletop Exercise within 60 days; (4) complete full EDR rollout within 45 days; (5) implement a Secure Device Disposal procedure before the next hardware refresh; and (6) develop a Deterrent control layer including login banners and a visitor escort policy.</p>
+      </div>
+      <div class="exec-section">
+        <div class="exec-section-title">Conclusion</div>
+        <p>NovaPay's security posture is functional but maturing. The company has made sound investments in preventive and governance controls appropriate for a Series A fintech. Addressing the six priority actions above would meaningfully reduce breach risk, close PCI-DSS Level 1 compliance gaps, and position the company favorably for its upcoming SOC 2 Type II audit.</p>
+      </div>
+      <div class="exec-signature">
+        <div><div class="exec-sig-name">Rei Zaimi</div><div class="exec-sig-role">Security Analyst · NovaPay Inc.</div></div>
+        <div class="exec-sig-date">March 3, 2026</div>
+      </div>
+      <button class="print-btn" onclick="window.print()">🖨 Print / Export to PDF</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>NovaPay Inc. · Security Controls Dashboard v3 · Domain 1 — General Security Concepts</span>
+  <span>Analyst: Rei Zaimi · March 3, 2026</span>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const CONTROLS = {
+  technical:[
+    {name:"Multi-Factor Authentication (MFA)",type:"Preventive",status:"Implemented",risk:"High",score:9,compliance:["PCI-DSS","SOC 2"],
+     why:"MFA is the single most effective control against credential-based attacks. For a fintech with remote workers accessing AWS systems, a compromised password alone is not enough to breach the system.",
+     placement:"Technical/Preventive — enforced at the system level, stops unauthorized access before it occurs.",
+     action:"Fully deployed via Okta SSO across all systems. No immediate action required."},
+    {name:"Endpoint Detection & Response (EDR)",type:"Detective",status:"Partial",risk:"High",score:8,compliance:["SOC 2"],
+     why:"EDR monitors all employee devices for malicious behavior in real time. Partial deployment means some endpoints are blind spots — a single unmonitored device can be an attacker's entry point.",
+     placement:"Technical/Detective — software-based, identifies threats as they occur on endpoints.",
+     action:"Complete rollout to all 50 employee devices. Prioritize engineering and finance laptops first."},
+    {name:"Encryption at Rest (AWS KMS)",type:"Preventive",status:"Implemented",risk:"High",score:9,compliance:["PCI-DSS","SOC 2"],
+     why:"NovaPay stores customer bank details and transaction records. Without encryption at rest, a storage breach directly exposes PII and financial data, violating PCI-DSS.",
+     placement:"Technical/Preventive — enforced by AWS KMS, prevents data exposure if storage is accessed without authorization.",
+     action:"Fully implemented across all S3 buckets and RDS instances. Review key rotation schedule quarterly."},
+    {name:"Web Application Firewall (WAF)",type:"Preventive",status:"Partial",risk:"High",score:8,compliance:["PCI-DSS"],
+     why:"The payment platform is internet-facing and vulnerable to SQL injection, XSS, and API abuse. Partial WAF coverage means some endpoints remain unprotected.",
+     placement:"Technical/Preventive — filters malicious HTTP traffic before it reaches the application layer.",
+     action:"Extend WAF rules to cover all API endpoints. Enable managed rule groups for OWASP Top 10."},
+    {name:"Centralized Logging + SIEM Monitoring",type:"Detective",status:"Partial",risk:"High",score:8,compliance:["PCI-DSS","SOC 2"],
+     why:"Without full SIEM coverage, security events go unnoticed. Attackers rely on poor visibility to remain undetected for extended periods.",
+     placement:"Technical/Detective — aggregates and correlates logs to identify security incidents in progress.",
+     action:"Ingest all AWS CloudTrail, VPC Flow Logs, and application logs into SIEM. Define alert thresholds."},
+    {name:"Role-Based Access Control (RBAC)",type:"Preventive",status:"Partial",risk:"High",score:8,compliance:["PCI-DSS","SOC 2"],
+     why:"Least privilege is foundational. Overly broad access means a single compromised account can access far more data than necessary.",
+     placement:"Technical/Preventive — restricts system access based on job role.",
+     action:"Conduct access review for all 50 employees. Revoke excess permissions and formalize role definitions."},
+    {name:"User & Entity Behavior Analytics (UEBA)",type:"Detective",status:"Implemented",risk:"High",score:8,compliance:["SOC 2"],
+     why:"UEBA detects insider threats and compromised accounts by identifying abnormal behavior patterns — critical for a fintech where employees access financial data.",
+     placement:"Technical/Detective — uses machine learning to flag deviations from normal user behavior.",
+     action:"Operational. Review alert tuning quarterly to reduce false positives."},
+    {name:"Fraud / Transaction Monitoring",type:"Detective",status:"Implemented",risk:"High",score:9,compliance:["PCI-DSS"],
+     why:"NovaPay processes real-time payments. Without automated fraud detection, fraudulent transactions could cause significant financial damage before being noticed.",
+     placement:"Technical/Detective — monitors transaction patterns in real time to flag anomalous activity.",
+     action:"Operational. Ensure rules are reviewed and updated as transaction patterns evolve."},
+    {name:"Network Traffic Analysis / IDS",type:"Detective",status:"Partial",risk:"High",score:7,compliance:["PCI-DSS"],
+     why:"An IDS monitors network traffic for known attack signatures and lateral movement. Partial deployment means portions of the network have no traffic visibility.",
+     placement:"Technical/Detective — inspects network packets and flags suspicious traffic patterns.",
+     action:"Deploy IDS sensors to cover all VPC subnets. Integrate alerts with SIEM."},
+    {name:"Privileged Access Management (PAM)",type:"Preventive",status:"Missing",risk:"High",score:9,compliance:["PCI-DSS","SOC 2"],
+     why:"AWS admin accounts without PAM controls are a top insider threat vector. PAM adds just-in-time access, approval workflows, and session recording for all privileged operations.",
+     placement:"Technical/Preventive — controls and audits access to privileged accounts and systems.",
+     action:"Evaluate PAM solutions (e.g. CyberArk, HashiCorp Vault). Prioritize AWS root and IAM admin accounts."},
+    {name:"Data Loss Prevention (DLP)",type:"Preventive",status:"Missing",risk:"High",score:8,compliance:["PCI-DSS","SOC 2"],
+     why:"Without DLP, sensitive data (PAN data, PII) can be exfiltrated via email, USB, or cloud uploads without detection. A critical PCI-DSS compliance gap.",
+     placement:"Technical/Preventive — monitors and blocks unauthorized transmission of sensitive data.",
+     action:"Implement DLP policies covering email, cloud storage, and endpoint file transfers."},
+  ],
+  managerial:[
+    {name:"Annual Risk Assessment",type:"Directive",status:"Implemented",risk:"High",score:9,compliance:["PCI-DSS","SOC 2"],
+     why:"A risk assessment identifies threats most relevant to NovaPay's environment. Without it, security investments are made without understanding actual exposure.",
+     placement:"Managerial/Directive — a formal management process that directs how security resources are prioritized.",
+     action:"Completed annually. Next assessment due Q4 2026. Ensure findings are tracked to remediation."},
+    {name:"Formal Information Security Policy",type:"Directive",status:"Implemented",risk:"High",score:9,compliance:["PCI-DSS","SOC 2"],
+     why:"The security policy is the foundation of the entire program. It defines expectations, responsibilities, and acceptable use for all 50 employees.",
+     placement:"Managerial/Directive — establishes rules and expected behavior across the organization.",
+     action:"Policy in place. Schedule annual review and ensure all new hires attest to it during onboarding."},
+    {name:"Vendor Risk Management Program",type:"Preventive",status:"Partial",risk:"High",score:8,compliance:["PCI-DSS","SOC 2"],
+     why:"NovaPay relies on third-party services (Stripe, Plaid, AWS). A vendor breach can directly impact NovaPay's data and compliance standing.",
+     placement:"Managerial/Preventive — proactively evaluates third-party risk before and during vendor relationships.",
+     action:"Complete vendor assessments for all Tier 1 vendors (banking rails, KYC providers). Establish review cadence."},
+    {name:"Background Checks for Employees",type:"Directive",status:"Partial",risk:"Medium",score:6,compliance:["SOC 2"],
+     why:"Insider threats are a significant risk in fintech. Background checks reduce the likelihood of hiring individuals with a history of financial fraud.",
+     placement:"Managerial/Directive — a required hiring process mandated by policy.",
+     action:"Enforce background checks for all new hires, including contractors with system access."},
+    {name:"Incident Response Plan (Documented)",type:"Directive",status:"Implemented",risk:"High",score:9,compliance:["PCI-DSS","SOC 2"],
+     why:"Without a documented IR plan, response to a breach is ad hoc and slow, increasing dwell time and financial impact.",
+     placement:"Managerial/Directive — a formal document that directs how incidents are handled across the organization.",
+     action:"IR Plan in place. Must be paired with tabletop exercises to be effective (see Operational tab)."},
+    {name:"Change Management Policy",type:"Preventive",status:"Partial",risk:"Medium",score:6,compliance:["SOC 2"],
+     why:"Uncontrolled changes to production systems are a leading cause of outages and vulnerabilities. A formal process prevents unauthorized or untested changes.",
+     placement:"Managerial/Preventive — governs how changes are reviewed and approved before deployment.",
+     action:"Formalize change approval process. Require peer review and security sign-off for production changes."},
+    {name:"Cyber Insurance Policy",type:"Corrective",status:"Partial",risk:"Medium",score:5,compliance:[],
+     why:"Cyber insurance limits financial damage after a breach. For a startup, a major incident without insurance could be company-ending.",
+     placement:"Managerial/Corrective — a financial mechanism that helps the organization recover after a security incident.",
+     action:"Existing policy covers basic liability. Review coverage limits against NovaPay's daily transaction volume."},
+  ],
+  operational:[
+    {name:"Employee Security Awareness Training",type:"Preventive",status:"Implemented",risk:"High",score:8,compliance:["PCI-DSS","SOC 2"],
+     why:"Human error is the leading cause of breaches. Regular training reduces the likelihood that employees click phishing links or mishandle data.",
+     placement:"Operational/Preventive — a recurring human-driven process that reduces risk through education.",
+     action:"Annual training completed. Consider quarterly micro-trainings focused on payment fraud and phishing."},
+    {name:"Phishing Simulation Program",type:"Detective",status:"Partial",risk:"High",score:7,compliance:["SOC 2"],
+     why:"Simulations reveal which employees are susceptible to phishing in a safe environment. Without them, the first real phishing test is an actual attack.",
+     placement:"Operational/Detective — identifies human vulnerabilities before attackers can exploit them.",
+     action:"Launch quarterly phishing simulations. Track click rates by department and feed results into training."},
+    {name:"Patch Management Process",type:"Preventive",status:"Partial",risk:"High",score:8,compliance:["PCI-DSS"],
+     why:"Unpatched systems are among the most common attack vectors. Partial patch management means some systems may have known, exploitable vulnerabilities.",
+     placement:"Operational/Preventive — a regular process that eliminates known vulnerabilities through software updates.",
+     action:"Define SLA for critical patches (e.g. 48 hours for CVSS 9+). Automate patching for OS-level updates."},
+    {name:"Daily Backup + Restore Testing",type:"Corrective",status:"Partial",risk:"High",score:8,compliance:["PCI-DSS","SOC 2"],
+     why:"Backups are useless unless tested. Partial implementation means some data may not be recoverable after a ransomware attack or data corruption event.",
+     placement:"Operational/Corrective — restores normal operations after data loss incidents.",
+     action:"Automate daily backups for all production databases. Schedule monthly restore tests and document results."},
+    {name:"Incident Response Tabletop Exercises",type:"Corrective",status:"Missing",risk:"High",score:9,compliance:["SOC 2"],
+     why:"Having an IR plan is not enough. Without practice, teams freeze or make errors during a real incident. Tabletop exercises build muscle memory and identify plan gaps.",
+     placement:"Operational/Corrective — a practice-based process that prepares the team to execute the IR plan effectively.",
+     action:"Schedule first tabletop exercise within 60 days. Scenario: ransomware attack on payment processing infrastructure."},
+    {name:"Secure SDLC (Code Review + SAST/DAST)",type:"Preventive",status:"Partial",risk:"High",score:8,compliance:["PCI-DSS"],
+     why:"NovaPay builds its own payment platform. Vulnerabilities introduced in code are far cheaper to fix during development than after deployment.",
+     placement:"Operational/Preventive — integrates security into development to prevent vulnerable code from reaching production.",
+     action:"Enforce mandatory code review for all PRs. Integrate SAST tool into CI/CD pipeline for automated scanning."},
+    {name:"Manual Transaction Review",type:"Compensating",status:"Missing",risk:"High",score:8,compliance:["PCI-DSS"],
+     why:"Automated fraud detection has false negatives. A human review process compensates for edge cases flagged by the system, required under PCI-DSS.",
+     placement:"Operational/Compensating — a human fallback that compensates for limitations of automated fraud detection.",
+     action:"Define escalation workflow for flagged transactions. Assign responsibility to Operations team. Target: 30 days."},
+    {name:"Security Incident & Event Escalation Procedure",type:"Directive",status:"Missing",risk:"High",score:7,compliance:["PCI-DSS","SOC 2"],
+     why:"Without a defined escalation path, detected events may not reach the right people in time. Bridges the gap between detection (SIEM/UEBA) and response (IR Plan).",
+     placement:"Operational/Directive — mandates how security events are reported, triaged, and escalated across the team.",
+     action:"Document escalation matrix: who to call, when, and at what severity threshold. Integrate with PagerDuty."},
+  ],
+  physical:[
+    {name:"Badge Access to Server/Network Room",type:"Preventive",status:"Implemented",risk:"Medium",score:7,compliance:["PCI-DSS"],
+     why:"Physical access to network hardware must be restricted. An unauthorized person with physical access to servers can bypass all digital controls.",
+     placement:"Physical/Preventive — restricts who can physically access critical infrastructure.",
+     action:"Access logs reviewed monthly. Ensure terminated employees are revoked within 24 hours."},
+    {name:"Clean Desk Policy",type:"Deterrent",status:"Partial",risk:"Medium",score:5,compliance:["SOC 2"],
+     why:"Sensitive documents left on desks are vulnerable to shoulder surfing and physical theft. A clean desk policy deters accidental data exposure.",
+     placement:"Physical/Deterrent — discourages careless handling of sensitive materials through policy enforcement.",
+     action:"Add clean desk requirement to security policy. Include in onboarding and annual training."},
+    {name:"CCTV in Office Areas",type:"Detective",status:"Partial",risk:"Medium",score:6,compliance:[],
+     why:"CCTV detects and records unauthorized access, theft, and policy violations. Partial coverage means some office areas are unmonitored.",
+     placement:"Physical/Detective — identifies and records physical security incidents as they occur.",
+     action:"Extend CCTV to cover all entry/exit points and the server room. Ensure 30-day retention."},
+    {name:"Asset Inventory Tracking (Laptops/Devices)",type:"Preventive",status:"Partial",risk:"High",score:7,compliance:["PCI-DSS"],
+     why:"Without a complete asset inventory, NovaPay cannot ensure all devices are patched and encrypted. Lost devices with payment data create PCI-DSS violations.",
+     placement:"Physical/Preventive — maintains a record of all hardware assets to ensure they are properly managed.",
+     action:"Implement MDM solution to auto-register all devices. Conduct physical inventory audit quarterly."},
+    {name:"Secure Device Disposal Process",type:"Preventive",status:"Missing",risk:"High",score:8,compliance:["PCI-DSS"],
+     why:"Decommissioned laptops with unwiped drives may contain customer PAN data. Improper disposal directly violates PCI-DSS and risks data exposure.",
+     placement:"Physical/Preventive — ensures sensitive data is securely destroyed when devices are retired.",
+     action:"Establish disposal SOP: wipe drives with DoD 5220.22-M standard, use certified e-waste vendor, log all disposals."},
+    {name:"Office Visitor Sign-in & Escort Policy",type:"Directive",status:"Missing",risk:"Medium",score:5,compliance:["SOC 2"],
+     why:"Without a visitor log, unauthorized individuals can enter NovaPay's office undetected. Any visitor near the server room or employee workstations is a physical security risk.",
+     placement:"Physical/Directive — mandates how visitors are registered, supervised, and escorted while on premises.",
+     action:"Implement digital visitor log at reception. Require escort for all non-employees in engineering areas."},
+  ]
+};
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function statusClass(s){return s==='Implemented'?'badge-implemented':s==='Partial'?'badge-partial':'badge-missing'}
+function riskColor(s){return s==='High'?'#c0392b':s==='Medium'?'#b5620a':'#2d6a4f'}
+function scoreColor(n){return n>=8?'#c0392b':n>=6?'#b5620a':'#2d6a4f'}
+
+function compTags(arr){
+  return arr.map(c=>{
+    if(c==='PCI-DSS') return `<span class="comp-tag comp-pci">PCI-DSS</span>`;
+    if(c==='SOC 2') return `<span class="comp-tag comp-soc">SOC 2</span>`;
+    return '';
+  }).join('')||'<span style="font-size:11px;color:var(--text-muted)">—</span>';
+}
+
+function riskMeter(score){
+  const pct = (score/10)*100;
+  const col = scoreColor(score);
+  return `<div class="risk-meter">
+    <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+    <span class="risk-score" style="color:${col}">${score}</span>
+  </div>`;
+}
+
+// ─── STATS ───────────────────────────────────────────────────────────────────
+function buildStats(){
+  const all=Object.values(CONTROLS).flat();
+  const impl=all.filter(c=>c.status==='Implemented').length;
+  const part=all.filter(c=>c.status==='Partial').length;
+  const miss=all.filter(c=>c.status==='Missing').length;
+  document.getElementById('stat-total').textContent=all.length;
+  document.getElementById('stat-implemented').textContent=impl;
+  document.getElementById('stat-partial').textContent=part;
+  document.getElementById('stat-missing').textContent=miss;
+  document.getElementById('exec-total').textContent=all.length;
+  document.getElementById('exec-total-n').textContent=all.length;
+  document.getElementById('exec-implemented').textContent=impl;
+  document.getElementById('exec-missing').textContent=miss;
+
+  // Maturity bars on profile
+  const cats=['technical','managerial','operational','physical'];
+  const ids=['tech','mgr','ops','phy'];
+  cats.forEach((cat,i)=>{
+    const controls=CONTROLS[cat];
+    const score=controls.reduce((acc,c)=>{
+      return acc+(c.status==='Implemented'?1:c.status==='Partial'?0.5:0);
+    },0)/controls.length*100;
+    setTimeout(()=>{
+      const bar=document.getElementById(`mat-${ids[i]}-bar`);
+      const label=document.getElementById(`mat-${ids[i]}`);
+      if(bar){bar.style.width=score.toFixed(0)+'%'; bar.style.background=score>=70?'var(--green)':score>=40?'var(--amber)':'var(--red)';}
+      if(label) label.textContent=score.toFixed(0)+'%';
+    },300);
+  });
+
+  // Tab counts
+  cats.forEach(cat=>{
+    const el=document.getElementById(`tc-${cat}`);
+    if(el) el.textContent=CONTROLS[cat].length;
+  });
+}
+
+// ─── PROGRESS RING ───────────────────────────────────────────────────────────
+function buildRing(category){
+  const controls=CONTROLS[category];
+  const impl=controls.filter(c=>c.status==='Implemented').length;
+  const part=controls.filter(c=>c.status==='Partial').length;
+  const pct=Math.round(((impl+part*0.5)/controls.length)*100);
+  const r=18,circ=2*Math.PI*r,offset=circ-(pct/100)*circ;
+  const color=pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
+  const wrap=document.getElementById(`ring-${category}`);
+  if(!wrap)return;
+  wrap.innerHTML=`<div class="progress-ring-wrap">
+    <svg width="44" height="44" class="progress-ring">
+      <circle class="ring-bg" cx="22" cy="22" r="${r}"/>
+      <circle class="ring-fill" cx="22" cy="22" r="${r}" stroke="${color}"
+        stroke-dasharray="${circ}" stroke-dashoffset="${circ}" id="ring-fill-${category}"/>
+    </svg>
+    <div><div style="font-family:'DM Serif Display',serif;font-size:14px;color:${color}">${pct}%</div>
+    <div class="progress-ring-label">Coverage</div></div>
+  </div>`;
+  setTimeout(()=>{
+    const el=document.getElementById(`ring-fill-${category}`);
+    if(el) el.style.strokeDashoffset=offset;
+  },200);
+}
+
+// ─── BUILD TABLES ─────────────────────────────────────────────────────────────
+function buildTable(category){
+  const controls=CONTROLS[category];
+  const tbody=document.querySelector(`#tbl-${category} tbody`);
+  tbody.innerHTML='';
+  const impl=controls.filter(c=>c.status==='Implemented').length;
+  const part=controls.filter(c=>c.status==='Partial').length;
+  const miss=controls.filter(c=>c.status==='Missing').length;
+  document.getElementById(`ps-${category}-i`).textContent=`${impl} Implemented`;
+  document.getElementById(`ps-${category}-p`).textContent=`${part} Partial`;
+  document.getElementById(`ps-${category}-m`).textContent=`${miss} Missing`;
+  buildRing(category);
+
+  controls.forEach((c,i)=>{
+    const tr=document.createElement('tr');
+    tr.dataset.status=c.status;tr.dataset.type=c.type;tr.dataset.index=i;tr.dataset.category=category;
+    tr.style.cssText=`animation-delay:${i*.05}s;opacity:0;animation:fadeRow .3s forwards`;
+    tr.innerHTML=`
+      <td><span class="control-name">${c.name}<span class="expand-icon">▶</span></span></td>
+      <td><span class="badge badge-type">${c.type}</span></td>
+      <td><span class="badge ${statusClass(c.status)}">${c.status}</span></td>
+      <td>${riskMeter(c.score)}</td>
+      <td>${compTags(c.compliance)}</td>`;
+    tr.addEventListener('click',()=>toggleExpand(tr,c,category));
+    tbody.appendChild(tr);
+    const er=document.createElement('tr');
+    er.classList.add('expand-row');er.id=`expand-${category}-${i}`;
+    er.innerHTML=`<td colspan="5"><div class="expand-content">
+      <div><div class="expand-section-title">Why this control matters</div><div class="expand-section-text">${c.why}</div></div>
+      <div><div class="expand-section-title">Reasoning for placement</div><div class="expand-section-text">${c.placement}</div></div>
+      <div><div class="expand-section-title">Recommended action</div><div class="expand-section-text">${c.action}</div></div>
+    </div></td>`;
+    tbody.appendChild(er);
+  });
+  buildFilterBar(category);
+}
+
+function toggleExpand(tr,c,category){
+  const i=tr.dataset.index;
+  const er=document.getElementById(`expand-${category}-${i}`);
+  const isOpen=er.classList.contains('open');
+  document.querySelectorAll(`#tbl-${category} .expand-row`).forEach(r=>r.classList.remove('open'));
+  document.querySelectorAll(`#tbl-${category} tbody tr:not(.expand-row)`).forEach(r=>r.classList.remove('expanded'));
+  if(!isOpen){er.classList.add('open');tr.classList.add('expanded');}
+}
+
+// ─── FILTER BAR ─────────────────────────────────────────────────────────────
+function buildFilterBar(category){
+  const fb=document.getElementById(`fb-${category}`);
+  const types=[...new Set(CONTROLS[category].map(c=>c.type))];
+  fb.innerHTML=`<span class="filter-label">Filter:</span>
+    <button class="filter-btn active" onclick="applyFilter('${category}','all',this)">All</button>
+    <button class="filter-btn f-implemented" onclick="applyFilter('${category}','Implemented',this)">✓ Implemented</button>
+    <button class="filter-btn f-partial" onclick="applyFilter('${category}','Partial',this)">~ Partial</button>
+    <button class="filter-btn f-missing" onclick="applyFilter('${category}','Missing',this)">✗ Missing</button>
+    ${types.map(t=>`<button class="filter-btn" onclick="applyFilter('${category}','${t}',this)">${t}</button>`).join('')}
+    <input class="search-input" type="text" placeholder="Search controls…" oninput="searchTable('${category}',this.value)">`;
+}
+
+function applyFilter(category,value,btn){
+  document.querySelectorAll(`#fb-${category} .filter-btn`).forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const si=document.querySelector(`#fb-${category} .search-input`);
+  if(si) si.value='';
+  let vis=0;
+  document.querySelectorAll(`#tbl-${category} tbody tr:not(.expand-row)`).forEach(tr=>{
+    const match=value==='all'||tr.dataset.status===value||tr.dataset.type===value;
+    tr.classList.toggle('hidden-row',!match);
+    if(match) vis++;
+    const er=document.getElementById(`expand-${category}-${tr.dataset.index}`);
+    if(er) er.classList.remove('open');
+    tr.classList.remove('expanded');
+  });
+  showNoResults(category,vis);
+}
+
+function searchTable(category,query){
+  const q=query.toLowerCase();
+  document.querySelectorAll(`#fb-${category} .filter-btn`).forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll(`#fb-${category} .filter-btn`)[0].classList.add('active');
+  let vis=0;
+  document.querySelectorAll(`#tbl-${category} tbody tr:not(.expand-row)`).forEach(tr=>{
+    const match=!q||tr.textContent.toLowerCase().includes(q);
+    tr.classList.toggle('hidden-row',!match);
+    if(match) vis++;
+  });
+  showNoResults(category,vis);
+}
+
+function showNoResults(category,count){
+  const ex=document.getElementById(`no-results-${category}`);
+  if(ex) ex.remove();
+  if(count===0){
+    const tbody=document.querySelector(`#tbl-${category} tbody`);
+    const tr=document.createElement('tr');
+    tr.id=`no-results-${category}`;
+    tr.innerHTML=`<td colspan="5" class="no-results">No controls match this filter.</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  document.querySelectorAll(`#tab-${name} tbody tr:not(.expand-row)`).forEach((tr,i)=>{
+    tr.style.opacity='0';tr.style.animation='none';void tr.offsetWidth;
+    tr.style.animationDelay=(i*.04)+'s';tr.style.animation='fadeRow .3s forwards';
+  });
+}
+
+// ─── CHARTS ──────────────────────────────────────────────────────────────────
+function buildCharts(){
+  const all=Object.values(CONTROLS).flat();
+  const typeCounts={};
+  all.forEach(c=>{typeCounts[c.type]=(typeCounts[c.type]||0)+1});
+  const labels=Object.keys(typeCounts),values=Object.values(typeCounts);
+  const colors=['#1d3557','#e63946','#457b9d','#f4a261','#a8dadc','#e9c46a','#9b5de5'];
+
+  new Chart(document.getElementById('donutChart'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:values,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}`}}}}
+  });
+
+  const legend=document.getElementById('donut-legend');
+  labels.forEach((l,i)=>{
+    legend.innerHTML+=`<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div><span>${l} <strong>(${values[i]})</strong></span></div>`;
+  });
+
+  const cats=['technical','managerial','operational','physical'];
+  new Chart(document.getElementById('statusChart'),{
+    type:'bar',
+    data:{
+      labels:['Technical','Managerial','Operational','Physical'],
+      datasets:[
+        {label:'Implemented',data:cats.map(c=>CONTROLS[c].filter(x=>x.status==='Implemented').length),backgroundColor:'#2d6a4f',borderRadius:4},
+        {label:'Partial',data:cats.map(c=>CONTROLS[c].filter(x=>x.status==='Partial').length),backgroundColor:'#e9a44a',borderRadius:4},
+        {label:'Missing',data:cats.map(c=>CONTROLS[c].filter(x=>x.status==='Missing').length),backgroundColor:'#c0392b',borderRadius:4},
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},padding:14,boxWidth:10,boxHeight:10,usePointStyle:true}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{family:'DM Sans',size:11}}},y:{stacked:true,grid:{color:'#f0efe9'},ticks:{font:{family:'DM Mono',size:10},stepSize:2}}}}
+  });
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  buildStats();
+  ['technical','managerial','operational','physical'].forEach(buildTable);
+  buildCharts();
+});
+</script>
+</body>
+</html>
