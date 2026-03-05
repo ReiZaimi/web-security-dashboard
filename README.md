@@ -1,7 +1,7 @@
 # 🔐 NovaPay Security Controls Dashboard
 ### CompTIA Security+ Project — Domain 1: General Security Concepts
 
-> **Note:** NovaPay Inc. is a fictional company created for educational purposes. All data, controls, and scenarios are simulated to reflect a realistic fintech security environment.
+> **Note:** NovaPay Inc. is a fictional AI-generated company created for educational purposes. All data, controls, and scenarios are simulated to reflect a realistic fintech security environment.
 
 ---
 
@@ -11,7 +11,7 @@ This project is a hands-on application of **CompTIA Security+ Domain 1 — Gener
 
 The deliverable is a fully interactive **HTML Security Controls Dashboard** mapping 34 security controls across four categories for NovaPay Inc. — a fictional 50-person fintech startup processing digital payments.
 
-**Live Dashboard →** `https://reizaimi.github.io/web-security-dashboard/`
+**Live Dashboard →** https://reizaimi.github.io/web-security-dashboard/web_security_dashboard.html
 
 ---
 
@@ -19,7 +19,7 @@ The deliverable is a fully interactive **HTML Security Controls Dashboard** mapp
 
 | Field | Details |
 |---|---|
-| **Company** | NovaPay Inc. *(fictional)* |
+| **Company** | NovaPay Inc. *(fictional, AI-generated)* |
 | **Industry** | Fintech — Digital Payments & Money Transfers |
 | **Size** | 50 employees |
 | **Founded** | 2021 (fictional) |
@@ -41,6 +41,7 @@ NovaPay was designed as a realistic threat-rich environment — a small team han
 | Managerial | 7 |
 | Operational | 8 |
 | Physical | 6 |
+| **Total** | **34** |
 
 ### Control Types Applied
 - **Preventive** — stops incidents before they occur
@@ -78,7 +79,7 @@ NovaPay was designed as a realistic threat-rich environment — a small team han
 
 ## 🔍 Key Findings (Gap Analysis)
 
-After mapping all controls, the analysis identified three critical gaps for NovaPay:
+After mapping all 34 controls, the analysis identified three critical gaps for NovaPay:
 
 1. **No Manual Transaction Review process** — the only Compensating control is Missing, creating direct PCI-DSS Requirement 10 exposure
 2. **IR Plan never exercised** — a documented plan without tabletop practice is insufficient for a payment processor
@@ -92,8 +93,8 @@ The weakest control *type* across all categories is **Compensating**, followed b
 
 | File | Description |
 |---|---|
-| `novapay_security_dashboard_v3.html` | Main interactive dashboard (open in any browser) |
-| `CompTIA_Project_1.xlsx` | Source spreadsheet with all control data |
+| `web_security_dashboard.html` | Main interactive dashboard (open in any browser) |
+| `CompTIASec+_project .xlsx` | Source spreadsheet with all 34 control entries |
 | `README.md` | This file |
 
 ---
@@ -112,11 +113,11 @@ The weakest control *type* across all categories is **Compensating**, followed b
 
 ## 🚀 How to View
 
-**Option 1 — Live (GitHub Pages):**
-Visit the link above once GitHub Pages is enabled.
+**Option 1 — Live:**
+👉 https://reizaimi.github.io/web-security-dashboard/web_security_dashboard.html
 
 **Option 2 — Local:**
-1. Download `novapay_security_dashboard_v3.html`
+1. Download `web_security_dashboard.html`
 2. Open it in any modern browser (Chrome, Firefox, Safari, Edge)
 3. No installation or dependencies required
 
@@ -126,8 +127,5 @@ Visit the link above once GitHub Pages is enabled.
 
 **Rei Zaimi**
 Security Analyst | CompTIA Security+ Candidate
-[GitHub](https://github.com/yourusername) · [LinkedIn](https://linkedin.com/in/yourprofile)
 
----
-
-*This project was built as part of a self-directed CompTIA Security+ study program. NovaPay Inc. is entirely fictional and was created using AI assistance for educational purposes. No real company, data, or individuals are represented.*
+[GitHub](https://github.com/ReiZaimi) · [LinkedIn](https://www.linkedin.com/in/rei-zaimi/)
